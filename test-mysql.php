@@ -1,15 +1,19 @@
 <?php
+$thm = $_GET['thm'] ?? 1;
+$nb = intval($_GET['nb']) ?? 10;
 
-$cnx = new mysqli('db', 'teetim', 'teetim', 'teetim');
+$dsn = "mysql:host=db;dbname=teetim;charset=utf8mb4";
 
-$sql = "SELECT theme.nom, SUM(ventes) AS ventes_totales
-        FROM produit
-            JOIN theme ON thm_id = theme.id
-                WHERE cat_id=1
-                GROUP BY thm_id
-                ORDER BY ventes_totales DESC";
+$cnx = new PDO($dsn, 'teetim', 'teetim', [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
+]);
 
-$resultat = $cnx->query($sql);
+$sql = "SELECT nom, prix, ventes FROM produit WHERE thm_id=? LIMIT $nb";
+$reqParemetree = $cnx->prepare($sql);
+
+$resultat = $reqParemetree->execute([$thm]);
+$enregistrements = $reqParemetree->fetchAll();
 
 ?>
 
@@ -21,11 +25,13 @@ $resultat = $cnx->query($sql);
     <title>Test intégration PHP/MySQL</title>
 </head>
 <body>
-    <h2>Ventes totales par nom de thème</h2>
-    <ul>
-        <?php while($ligne = $resultat->fetch_object()):;  ?>
-            <li><?= $ligne->nom; ?> : <?= $ligne->ventes_totales; ?></li>
-        <?php endwhile;  ?>
-    </ul>
+    <h2><?= $nb; ?> produits par thème (<?= $thm; ?>)</h2>
+    <?php foreach($enregistrements as $ligne) :  ?>
+        <div>
+            <span><?= $ligne->nom; ?></span>
+            <span><?= $ligne->prix; ?></span>
+            <span><?= $ligne->ventes; ?></span>
+        </div>
+    <?php endforeach;  ?>
 </body>
 </html>
